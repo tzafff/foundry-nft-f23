@@ -22,4 +22,8 @@ contract BasicNft is ERC721 {
     function tokenURI (uint256 tokendId) public view override returns (string memory) {
         return s_tokenIdToUri[tokendId];
     }
+
+    function getTokenCounter() public view returns (uint256) {
+        return s_tokenCounter;
+    }
 }

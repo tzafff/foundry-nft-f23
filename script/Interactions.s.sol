@@ -2,26 +2,108 @@
 
 pragma solidity ^0.8.20;
 
-import {Script, console} from "forge-std/Script.sol";
+import {stdJson} from "forge-std/StdJson.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Script, console2} from "forge-std/Script.sol";
 import {BasicNft} from "../src/BasicNft.sol";
-import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
+import {MoodNft} from "../src/MoodNft.sol";
 
-contract MintBasicNft is Script {
-    address private contractAddress = 0x85E4Fb433E2A490a00CDc0A9E0779355f3b81164;
-    string public constant PUG =
-        "ipfs://bafybeig37ioir76s7mg5oobetncojcm3c3hxasyd4rvid4jqhy4gkaheg4/?filename=0-PUG.json";
+
+contract MintBasicNFT is Script {
+    string private constant TOKEN_URI =
+        "https://ipfs.io/ipfs/QmfNN5LKRtjy4p9eaQbAZMiFzWhn6dtS3u8tf2WVNJX996?filename=BasicNFTMetadata.json";
 
     function run() external {
-        // address mostRecentlyDeployedBasicNft = DevOpsTools
-        //     .get_most_recent_deployment("BasicNft", block.chainid);
-        // console.log("get address ", mostRecentlyDeployedBasicNft);
-        // mintNftOnContract(mostRecentlyDeployedBasicNft);
-        mintNftOnContract(contractAddress);
+        console2.log("Start MintBasicNFT ");
+        address recentlyDeployedBasicNFTContract = getDeployedContractAddress();
+        console2.log("The returned address is: ", recentlyDeployedBasicNFTContract);
+        mintBasicNFT(recentlyDeployedBasicNFTContract);
     }
 
-    function mintNftOnContract(address contractAddress) public {
+    function getDeployedContractAddress() private view returns (address) {
+        string memory path = string.concat(
+            vm.projectRoot(),
+            "/broadcast/DeployBasicNft.s.sol/",
+            Strings.toString(block.chainid),
+            "/run-latest.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory contractAddress = stdJson.parseRaw(
+            json,
+            ".transactions[0].contractAddress"
+        );
+        return (bytesToAddress(contractAddress));
+    }
+
+    function bytesToAddress(
+        bytes memory bys
+    ) private pure returns (address addr) {
+        assembly {
+            addr := mload(add(bys, 32))
+        }
+    }
+
+    function mintBasicNFT(address _basicNFTcontractAddress) public {
         vm.startBroadcast();
-        BasicNft(contractAddress).mintNft(PUG);
+        console2.log("Minting of the BasicNFT is about to commence on chain: ", block.chainid);
+        console2.log("The passed in tokenURI is: ", TOKEN_URI);
+        console2.log("The passed in address is: ", _basicNFTcontractAddress);
+
+        
+        BasicNft(_basicNFTcontractAddress).mintNft(TOKEN_URI);
+        console2.log("I ran till this point");
+        vm.stopBroadcast();
+
+        uint256 yourNFTId = BasicNft(_basicNFTcontractAddress).getTokenCounter() - 1;
+
+        console2.log("The Id of your minted BasicNFT token is: ", yourNFTId);
+    }
+}
+
+
+
+contract MintMoodNft is Script {
+
+    function run() external {
+        console2.log("Start MintMoodNft ");
+        address recentlyMoodNftContract = getDeployedContractAddress();
+        console2.log("The returned address is: ", recentlyMoodNftContract);
+        mintNftOnContract(recentlyMoodNftContract);
+    }
+
+    function getDeployedContractAddress() private view returns (address) {
+        string memory path = string.concat(
+            vm.projectRoot(),
+            "/broadcast/DeployMoodNft.s.sol/",
+            Strings.toString(block.chainid),
+            "/run-latest.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory contractAddress = stdJson.parseRaw(
+            json,
+            ".transactions[0].contractAddress"
+        );
+        return (bytesToAddress(contractAddress));
+    }
+
+    function bytesToAddress(
+        bytes memory bys
+    ) private pure returns (address addr) {
+        assembly {
+            addr := mload(add(bys, 32))
+        }
+    }
+
+    function mintNftOnContract(address moodNftAddress) public {
+        vm.startBroadcast();
+        MoodNft(moodNftAddress).mintNft();
         vm.stopBroadcast();
     }
+}
+
+
+contract FlipMoodNft is Script {
+    uint256 public constant TOKEN_ID_TO_FLIP = 0;
+
+
 }
