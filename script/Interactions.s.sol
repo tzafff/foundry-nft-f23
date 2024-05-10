@@ -104,6 +104,39 @@ contract MintMoodNft is Script {
 
 contract FlipMoodNft is Script {
     uint256 public constant TOKEN_ID_TO_FLIP = 0;
+    function run() external {
+        address recentlyMoodNftContract = getDeployedContractAddress();
+        flipMoodNft(recentlyMoodNftContract);
+    }
 
+    function flipMoodNft(address moodNftAddress) public {
+        vm.startBroadcast();
+        MoodNft(moodNftAddress).flipMood(TOKEN_ID_TO_FLIP);
+        vm.stopBroadcast();
+    }
+
+
+    function getDeployedContractAddress() private view returns (address) {
+        string memory path = string.concat(
+            vm.projectRoot(),
+            "/broadcast/DeployMoodNft.s.sol/",
+            Strings.toString(block.chainid),
+            "/run-latest.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory contractAddress = stdJson.parseRaw(
+            json,
+            ".transactions[0].contractAddress"
+        );
+        return (bytesToAddress(contractAddress));
+    }
+
+    function bytesToAddress(
+        bytes memory bys
+    ) private pure returns (address addr) {
+        assembly {
+            addr := mload(add(bys, 32))
+        }
+    }
 
 }
